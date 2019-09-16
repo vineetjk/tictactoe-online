@@ -30,8 +30,8 @@ open class MainActivity : AppCompatActivity() {
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-        var b:Bundle= intent.extras
-        myEmail = b.getString("email")
+        var b: Bundle? = intent.extras
+        myEmail = b!!.getString("email")
 
     }
 
@@ -273,14 +273,14 @@ open class MainActivity : AppCompatActivity() {
     }
 
 
-    protected fun btOnclickRequest(view: android.view.View){
+     fun btOnclickReq(view: View){
 
         var userEmail = etMail.text.toString()
         myRef.child("Users").child(userEmail).child("Request").push().setValue(myEmail)
 
 
     }
-    protected fun btOnclickAccept(view: android.view.View){
+     fun btOnclickAcc(view: android.view.View){
         var userEmail = etMail.text.toString()
 
     }
