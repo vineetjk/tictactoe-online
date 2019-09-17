@@ -3,15 +3,21 @@ package code.vineet.tictactoe
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.view.contentcapture.ContentCaptureSessionId
 import android.widget.Button
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import kotlinx.android.synthetic.main.activity_login.*
+import com.google.firebase.database.ValueEventListener
+import java.lang.Exception
+import java.util.*
 
 
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 open class MainActivity : AppCompatActivity() {
 
@@ -32,6 +38,7 @@ open class MainActivity : AppCompatActivity() {
 
         var b: Bundle? = intent.extras
         myEmail = b!!.getString("email")
+        Incommingcalls()
 
     }
 
@@ -56,7 +63,10 @@ open class MainActivity : AppCompatActivity() {
 
         //Toast.makeText(this, "hey you pressed $cellId", Toast.LENGTH_SHORT).show()
 
-        playGame(cellId,btSelected)
+       // playGame(cellId,btSelected)
+        // for ofline remove comment
+
+        myRef.child("PlayerOnline").child(sessionId!!).child(cellId.toString()).setValue(myEmail)
 
     }
 
@@ -93,6 +103,8 @@ open class MainActivity : AppCompatActivity() {
 
 
     }
+
+
 
     fun checkWinner(){
 
@@ -217,7 +229,7 @@ open class MainActivity : AppCompatActivity() {
 
     }
 
-    fun btClickAgain(view: View){
+    fun btClickAgain(view: View) {
         clearAll()
         scoreO = 0
         scoreX = 0
@@ -276,12 +288,137 @@ open class MainActivity : AppCompatActivity() {
      fun btOnclickReq(view: View){
 
         var userEmail = etMail.text.toString()
-        myRef.child("Users").child(userEmail).child("Request").push().setValue(myEmail)
+        myRef.child("Users").child(SplitString(userEmail)).child("Request").push().setValue(myEmail)
 
+
+        PlayerOnline(SplitString(myEmail!!)+SplitString(userEmail))
+         PlayerSymbol = "X"
 
     }
      fun btOnclickAcc(view: android.view.View){
         var userEmail = etMail.text.toString()
 
+         myRef.child("Users").child(SplitString(userEmail)).child("Request").push().setValue(myEmail)
+
+         PlayerOnline(SplitString(userEmail)+SplitString(myEmail!!))
+         PlayerSymbol = "O"
+
+     }
+var sessionId:String?=null
+    var PlayerSymbol:String?=null
+    fun PlayerOnline(sessionId:String){
+    this.sessionId = sessionId
+
+        myRef.child("PlayerOnline").child(sessionId)
+            .addValueEventListener(object :ValueEventListener{
+
+                override fun onCancelled(p0: DatabaseError) {
+
+
+
+                }
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    try {
+
+                        player1.clear()
+                        player2.clear()
+                        val td = dataSnapshot!!.value as HashMap<String,Any>
+
+                        if (td!=null){
+
+                            var value:String
+                            for(key in td.keys) {
+                                value = td[key] as String
+
+                                if (value!=myEmail){
+                                    activePlayer = if (PlayerSymbol === "X" ) 1 else 2
+
+                                }else{
+                                    activePlayer = if (PlayerSymbol === "X" ) 2 else 1
+
+                                }
+                                autoPlay(key.toInt())
+
+
+
+                            }
+                        }
+                    }catch (ex:Exception){}
+
+                }
+
+
+
+            })
+
     }
+
+    fun Incommingcalls(){
+        myRef.child("Users").child(SplitString(myEmail!!)).child("Request")
+            .addValueEventListener(object :ValueEventListener{
+
+                override fun onCancelled(p0: DatabaseError) {
+
+
+
+                     }
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    try {
+                        val td = dataSnapshot!!.value as HashMap<String,Any>
+
+                        if (td!=null){
+
+                            var value:String
+                            for(key in td.keys) {
+                                value = td[key] as String
+                                etMail.setText(value)
+
+                                myRef.child("Users").child(SplitString(myEmail!!)).child("Request").setValue(true)
+
+                                break
+
+                            }
+                        }
+                    }catch (ex:Exception){}
+
+                     }
+
+
+
+            })
+    }
+
+    fun SplitString(str:String): String {
+        var split = str.split("@")
+        return split[0]
+
+    }
+
+    fun autoPlay(cellId: Int){
+
+
+
+        var buSelected:Button?
+        buSelected =  when(cellId){
+            1-> bt1
+            2-> bt2
+            3-> bt3
+            4-> bt4
+            5-> bt5
+            6-> bt6
+            7-> bt7
+            8-> bt8
+            9-> bt9
+            else ->{ bt1}
+
+        }
+
+        playGame(cellId, buSelected)
+
+    }
+
 }
